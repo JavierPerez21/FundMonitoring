@@ -1,0 +1,8 @@
+investpy
+pandas
+ta
+numpy
+scikit-learn
+scipy
+tqdm
+matplotlib
