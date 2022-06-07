@@ -21,18 +21,21 @@ def calculate_return_series(series: pd.Series) -> pd.Series:
 
     shifted_series = series.shift(1, axis=0)
     return series / shifted_series - 1
+
 def calculate_log_return_series(series: pd.Series) -> pd.Series:
     """
     Same as calculate_return_series but with log returns
     """
     shifted_series = series.shift(1, axis=0)
     return pd.Series(np.log(series / shifted_series))
+
 def calculate_percent_return(series: pd.Series) -> float:
     """
     Takes the first and last value in a series to determine the percent return,
     assuming the series is in date-ascending order
     """
     return series.iloc[-1] / series.iloc[0] - 1
+
 def get_years_past(series: pd.Series) -> float:
     """
     Calculate the years past according to the index of the series for use with
@@ -41,6 +44,7 @@ def get_years_past(series: pd.Series) -> float:
     start_date = series.index[0]
     end_date = series.index[-1]
     return (end_date - start_date).days / 365.25
+
 def calculate_cagr(series: pd.Series) -> float:
     """
     Calculate compounded annual growth rate
@@ -50,6 +54,7 @@ def calculate_cagr(series: pd.Series) -> float:
     value_factor = end_price / start_price
     year_past = get_years_past(series)
     return (value_factor ** (1 / year_past)) - 1
+
 def calculate_annualized_volatility(return_series: pd.Series) -> float:
     """
     Calculates annualized volatility for a date-indexed return series.
@@ -58,6 +63,7 @@ def calculate_annualized_volatility(return_series: pd.Series) -> float:
     years_past = get_years_past(return_series)
     entries_per_year = return_series.shape[0] / years_past
     return return_series.std() * np.sqrt(entries_per_year)
+
 def calculate_sharpe_ratio(price_series: pd.Series,
     benchmark_rate: float=0) -> float:
     """
@@ -68,6 +74,7 @@ def calculate_sharpe_ratio(price_series: pd.Series,
     return_series = calculate_return_series(price_series)
     volatility = calculate_annualized_volatility(return_series)
     return (cagr - benchmark_rate) / volatility
+
 def calculate_rolling_sharpe_ratio(price_series: pd.Series,
     n: float=20) -> pd.Series:
     """
@@ -76,6 +83,7 @@ def calculate_rolling_sharpe_ratio(price_series: pd.Series,
     """
     rolling_return_series = calculate_return_series(price_series).rolling(n)
     return rolling_return_series.mean() / rolling_return_series.std()
+
 def calculate_annualized_downside_deviation(return_series: pd.Series,
     benchmark_rate: float=0) -> float:
     """
@@ -96,6 +104,7 @@ def calculate_annualized_downside_deviation(return_series: pd.Series,
     downside_deviation = np.sqrt(downside_sum_of_squares / denominator)
 
     return downside_deviation * np.sqrt(entries_per_year)
+
 def calculate_sortino_ratio(price_series: pd.Series,
     benchmark_rate: float=0) -> float:
     """
@@ -105,6 +114,7 @@ def calculate_sortino_ratio(price_series: pd.Series,
     return_series = calculate_return_series(price_series)
     downside_deviation = calculate_annualized_downside_deviation(return_series)
     return (cagr - benchmark_rate) / downside_deviation
+
 def calculate_pure_profit_score(price_series: pd.Series) -> float:
     """
     Calculates the pure profit score
@@ -121,6 +131,7 @@ def calculate_pure_profit_score(price_series: pd.Series) -> float:
     r_squared = regression.score(t, price_series)
 
     return cagr * r_squared
+
 def calculate_jensens_alpha(return_series: pd.Series,
     benchmark_return_series: pd.Series) -> float:
     """
@@ -139,11 +150,13 @@ def calculate_jensens_alpha(return_series: pd.Series,
     # Fit a linear regression and return the alpha
     regression = LinearRegression().fit(clean_benchmarks, y=clean_returns)
     return regression.intercept_
+
 DRAWDOWN_EVALUATORS: Dict[str, Callable] = {
     'dollar': lambda price, peak: peak - price,
     'percent': lambda price, peak: -((price / peak) - 1),
     'log': lambda price, peak: np.log(peak) - np.log(price),
 }
+
 def calculate_drawdown_series(series: pd.Series, method: str='log') -> pd.Series:
     """
     Returns the drawdown series
@@ -153,11 +166,13 @@ def calculate_drawdown_series(series: pd.Series, method: str='log') -> pd.Series
 
     evaluator = DRAWDOWN_EVALUATORS[method]
     return evaluator(series, series.cummax())
+
 def calculate_max_drawdown(series: pd.Series, method: str='log') -> float:
     """
     Simply returns the max drawdown as a float
     """
     return calculate_drawdown_series(series, method).max()
+
 def calculate_max_drawdown_with_metadata(series: pd.Series,
     method: str='log') -> Dict[str, Any]:
     """
@@ -208,10 +223,12 @@ def calculate_max_drawdown_with_metadata(series: pd.Series,
         'trough_date': trough_date,
         'trough_price': trough_price
     }
+
 def calculate_log_max_drawdown_ratio(series: pd.Series) -> float:
     log_drawdown = calculate_max_drawdown(series, method='log')
     log_return = np.log(series.iloc[-1]) - np.log(series.iloc[0])
     return log_return - log_drawdown
+
 def calculate_calmar_ratio(series: pd.Series, years_past: int=3) -> float:
     """
     Return the percent max drawdown ratio over the past three years, otherwise

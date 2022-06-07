@@ -1,24 +1,28 @@
 from src.fund import *
 
 
-def get_funds(country = 'Spain', issuer_filter='Santander', limit_inception_date="01/01/2012"):
+def get_funds(country = 'Spain', issuer_filter='Santander'):
     available_funds = investpy.get_funds(country=country)
     time.sleep(1)
     funds = {}
     # Iterate over rows of available funds dataframe
+    frames = []
     for index, row in available_funds.iterrows():
         # Condition
         if issuer_filter in  row['issuer']:
-          try:
-            fund = Fund(row)
-            if pd.to_datetime(fund.inception_date) < pd.to_datetime(limit_inception_date):
-              fund.get_historical_data()
-              fund.calculate_metrics()
-              funds[fund.name] = fund
-              print(f'{round(100*index/len(available_funds), 2)}% extracted data for {row["name"]}')
-              time.sleep(1)
-          except Exception:
-            pass
+            try:
+                fund = Fund(row)
+                fund.get_historical_data()
+                fund.calculate_metrics()
+                funds[fund.name] = fund
+                print(f'{round(100*index/len(available_funds), 2)}% extracted data for {row["name"]}')
+                time.sleep(1)
+            except Exception:
+                pass
+    fund_dicts = {fund.name: fund.to_dict() for fund in funds.values()}
+    df = pd.DataFrame(fund_dicts).T
+    return df, funds
+
 
 def compare_funds(fund1=None, fund2=None,from_date="01/01/1990"):
     available_funds = investpy.get_funds(country='Spain')
@@ -43,9 +47,11 @@ def compare_funds(fund1=None, fund2=None,from_date="01/01/1990"):
     twin.yaxis.label.set_color(p2.get_color())
     plt.show()
 
-
-if __name__ == '__main__':
+def test_our_funds():
     f1 = 'Santander Acciones Españolas A Fi'
     compare_funds(fund1=f1, fund2='Morgan Stanley Investment Funds - Us Growth Fund A', from_date="01/01/1990")
     compare_funds(fund1=f1, fund2='Blackrock Global Funds - Global Allocation Fund E2', from_date="01/01/1990")
     compare_funds(fund1=f1, fund2='Blackrock Global Funds - Next Generation Technology Fund E2', from_date="01/01/1990")
+
+if __name__ == '__main__':
+    df, funds = get_funds(country='Spain', issuer_filter='Santander', limit_inception_date="01/01/2018")

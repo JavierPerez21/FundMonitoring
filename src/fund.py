@@ -17,8 +17,12 @@ class Fund():
         self.inception_date = fund_info['Inception Date'][0]
         self.market_cap = fund_info['Market Cap'][0]
         self.total_assets = fund_info['Total Assets'][0]
-        self.expenses = fund_info['Expenses'][0]
+        self.expenses = float(fund_info['Expenses'][0].replace("%", ""))
         self.category = fund_info['Category'][0]
+        self.ttm_yield = fund_info['TTM Yield'][0]
+        self.roe = float(fund_info['ROE'][0].replace("%", ""))
+        self.turnover = float(fund_info['Turnover'][0].replace("%", ""))
+        self.roa = float(fund_info['ROA'][0].replace("%", ""))
 
     def get_historical_data(self, from_date="01/01/1990"):
         to_date = datetime.datetime.now().strftime("%d/%m/%Y")
@@ -61,20 +65,23 @@ class Fund():
             expenses=self.expenses,
             category=self.category,
             country=self.country,
-            inception_return=self.inception_return,
             years=self.years,
-            cagr=self.cagr,
+            ttm_yield=self.ttm_yield,
+            roe=self.roe,
+            turnover=self.turnover,
+            roa=self.roa,
+            cagr=round(100*self.cagr, 2),
             annualized_volatility=self.annualized_volatility,
-            sharpe_ratio=self.sharpe_ratio,
-            sortino_ratio=self.sortino_ratio,
-            pure_profit_score=self.pure_profit_score,
-            max_drawdown=self.max_drawdown,
-            calmar_ratio=self.calmar_ratio,
+            sharpe_ratio=round(self.sharpe_ratio, 2) if self.sharpe_ratio > 1 else round(self.sharpe_ratio, 4),
+            sortino_ratio=round(self.sortino_ratio, 2) if self.sortino_ratio > 1 else round(self.sortino_ratio, 4),
+            pure_profit_score=round(self.pure_profit_score, 2) if self.pure_profit_score > 1 else round(self.pure_profit_score, 4),
+            max_drawdown=round(100*self.max_drawdown, 2),
+            calmar_ratio=round(self.calmar_ratio, 2) if self.calmar_ratio > 1 else round(self.calmar_ratio, 4),
         )
         for y in [1, 3, 5, 10, 15, 20]:
-            info_dict['yearly_return_' + str(y)] = self.df['yearly'][self.name].pct_change(y).iloc[-1] ** (1/y)
+            info_dict['yearly_return_' + str(y)] = round(100*(self.df['yearly'][self.name].pct_change(y).iloc[-1] ** (1/y) -1), 2)
         for m in [1, 3, 6, 12, 18, 24]:
-            info_dict['monthly_return_' + str(m)] = self.df['monthly'][self.name].pct_change(m).iloc[-1] ** (1/m)
+            info_dict['monthly_return_' + str(m)] = round(100*(self.df['monthly'][self.name].pct_change(m).iloc[-1] ** (1/m) -1), 2)
         return info_dict
 
     def display(self):
@@ -85,8 +92,6 @@ class Fund():
         info_dict = self.to_dict()
         for info in info_dict:
           if isinstance(info_dict[info], float):
-            if 'return' in info or info in ['max_drawdown', 'cagr']:
-              info_dict[info] = info_dict[info] * 100
             if abs(info_dict[info]) > 1:
               info_dict[info] = round(info_dict[info], 2)
             else:
